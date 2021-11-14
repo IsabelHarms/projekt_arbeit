@@ -12,7 +12,7 @@ pub struct Mult<T:Exp> {
     pub right: T
 }
  
-struct PlusN<T:Exp> { 
+struct PlusN<T:Exp> { //bisher nicht benutzt
    operands : Vec<T> 
 } 
  
@@ -41,7 +41,7 @@ impl<T:Exp> Exp for Mult<T> {
  
  
 pub fn run() { 
-    let e = Mult { left: Int{val:1}, right: Int{val:2}}; //3+1*2
+    let e = Mult { left: Int{val:1}, right: Int{val:2}}; 
  
     println!("{} done",e.eval());  
 }
