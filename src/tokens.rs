@@ -2,8 +2,8 @@ enum Token {
     Plus,
     Mult,
     Number,
-    CurlyOpen,
-    CurlyClose,
+    Open,
+    Close,
     End,
     Inval
 }
