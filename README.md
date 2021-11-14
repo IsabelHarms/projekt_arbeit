@@ -11,3 +11,11 @@ Idee zur Realisierung eines Syntax Baumes ohne Klassen in Rust:
 - Quelltext wird auf bestimmte Anfänge getestet und entsprechende Funktion wird aufgerufen (Switch?) (welche Möglichkeiten für Anfänge gibt es?)
 - Operatoren-Liste
 - "verbrauchte" Codestücke müssen abgeschnitten werden! (Restteile evtl. als slice?)
+
+Grammatik:
+
+Zahl: Ziffernfolge
+Summe: Produkt + Produkt + ... Produkt (1-n)
+Produkt:= Wert * Wert * ... Wert (1-n)
+Wert: (Ausdruck) oder Zahl
+Ausdruck: Summe
