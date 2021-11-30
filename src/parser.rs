@@ -2,6 +2,9 @@ pub fn make_exp(mut s: &str)  //return
 {
     while s.starts_with(" ") { s = &s[1..]; }// trim leading blanks
     while s.ends_with(" ") {s = &s[..s.len()-1]; } // trim trailing blanks
+    //parathesis are more complex than this ex: (1+2)*(3+4) and require further examination
+    //remove outer parenthesis only when they are unnecessary/belong together
+    //When do parenthesis "belong together"?
     if s.starts_with("(") && s.ends_with(")") { s = &s[1..s.len()-1]; } // discard outer (..)
     println!("'{}'",s); // for debugging only
     let split = outer_plus(s);
@@ -9,6 +12,7 @@ pub fn make_exp(mut s: &str)  //return
     { 
         make_exp(&s[..split]);
         make_exp(&s[(split+1)..]);
+        //Plus { left:  exp(), right: exp()}
     }
     else
     {
@@ -17,9 +21,11 @@ pub fn make_exp(mut s: &str)  //return
         { 
             make_exp(&s[..split]);
             make_exp(&s[(split+1)..]);
+            //Mult { left:  exp(), right: exp()}
         }
     }
-    //Plus { left:  exp, right: make_exp()}
+    //if this point is reached the are no operands left
+
 }
 
 fn outer_plus(s: &str)-> usize // cannot get slices from type u16 expressions?
