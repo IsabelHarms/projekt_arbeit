@@ -1,6 +1,10 @@
 Quellen bisher:
+
 https://doc.rust-lang.org/book/title-page.html
+
 https://www.youtube.com/watch?v=zF34dRivLOw&t=4102s
+
+https://doc.rust-lang.org/std/keyword.dyn.html
 
 Idee zur Realisierung eines Syntax Baumes ohne Klassen in Rust:
 
