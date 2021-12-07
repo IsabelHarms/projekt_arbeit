@@ -9,6 +9,10 @@ pub struct Plus<T:Exp> // Plus erfüllt das Exp-Muster
     pub right: T
 }
 
+struct PlusN<T:Exp> { //bisher nicht benutzt
+  operands : Vec<T> 
+}
+
 pub struct Mal<T:Exp> // Mal erfüllt das Exp-Muster
 {
     pub left: T,

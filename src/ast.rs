@@ -41,7 +41,7 @@ impl<T:Exp> Exp for Mult<T> {
  
  
 pub fn run() { 
-    let e = Mult { left: Int{val:1}, right: Int{val:2}}; 
+    let e = Mult { left: Plus{left: Int{val:2},right: Int{val:1}}, right: Int{val:1}}; 
  
     println!("{} done",e.eval());  
 }
