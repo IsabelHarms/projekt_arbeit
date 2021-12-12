@@ -87,31 +87,31 @@ fn zahl(s: &mut &str) -> Box<Exp> // digit ahead, consume digits
 
 fn summe(s: &mut &str)-> Box<Exp> // Produkt oder Produkt + Summe
 {
-     let result = produkt(&mut s);
-     if look_token(&mut s) != PLUS  { return result; }
-     next_char(&mut s);
-     Box::new(Exp::Plus { left: result, right: summe(&mut s) } )// return new struct object
+     let result = produkt(s);
+     if look_token(s) != PLUS  { return result; }
+     next_char(s);
+     Box::new(Exp::Plus { left: result, right: summe(s) } )// return new struct object
 }
 
  fn produkt(s: &mut &str) -> Box<Exp> // Wert oder Wert * Produkt
 {
-    let result = wert(&mut s);
-    if look_token(&mut s) != MAL { return result; }
-    next_char(&mut s);
-    Box::new(Exp::Mult { left: result, right: produkt(&mut s) }) // return new struct object
+    let result = wert(s);
+    if look_token(s) != MAL { return result; }
+    next_char(s);
+    Box::new(Exp::Mult { left: result, right: produkt(s) }) // return new struct object
 }
 
 fn wert(s: &mut &str) -> Box<Exp> // geklammerter Ausdruck oder Zahl
 {
-   if look_token(&mut s)== KLAUF
+   if look_token(s)== KLAUF
    {
-      next_char(&mut s);// (
-      let result = ausdruck(&mut s);
-      if look_token(&mut s) != KLZU { fehler("schließende Klammer fehlt"); }
-      next_char(&mut s); // )
+      next_char(s);// (
+      let result = ausdruck(s);
+      if look_token(s) != KLZU { fehler("schließende Klammer fehlt"); }
+      next_char(s); // )
       return result;
    }
-   if look_token(&mut s) == ZIFFER { return zahl(&mut s); }
+   if look_token(s) == ZIFFER { return zahl(s); }
 
    fehler("Syntaxfehler");
  }
@@ -122,13 +122,13 @@ fn ausdruck(s: &mut &str) -> Box<Exp> {
     //if *s == "" {
     //    return None;
     //} else {
-        let token = look_token(&mut &s);
+        let token = look_token(s);
         if token == ENDE { fehler("leerer Ausdruck"); }
         if token == KLZU { fehler("falsche Klammerung, fehlt Klammer auf?"); }
         if token ==  MAL { fehler("Syntaxfehler, fehlt ein Faktor?"); }
-        if token == PLUS { next_char(&mut &s); }
+        if token == PLUS { next_char(s); }
    
-        summe(&mut s)
+        summe(s)
     //}
 
 }
@@ -151,7 +151,9 @@ pub fn run() {
     let mut rest = input; 
     let root = ausdruck(&mut rest);
     //prüfen ob root none ist
-    println!("{0} = {1}", input, show_exp(&root));
+    println!("Input:  {0}", input);
+    println!("Parsed: {0}", show_exp(&root));
+    println!("Result: {0}", eval_exp(&root));
 }
 
 fn fehler(meldung: &str) -> ! // never returns
