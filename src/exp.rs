@@ -50,7 +50,7 @@ const UNGÜLTIG:i8 =0;
 // der Tokenizer:
 fn look_token(s: &mut &str) -> i8 // token remains to be consumed
 {
-     *s = (&s).trim();
+     *s = (&s).trim();  //discard blanks
      if s.len()== 0 { return ENDE; }
      let c: char = s.chars().nth(0).unwrap();
  
@@ -71,17 +71,17 @@ fn next_char(s: &mut &str) // consume 1 char
 
 fn zahl(s: &mut &str) -> Box<Exp> // digit ahead, consume digits
 {
-  let mut count = 0;
+  let mut count = 0;  //number of digits
 
   while count < s.len() && s.chars().nth(count).unwrap().is_digit(10)
   {
 	count += 1;
   }  
-  let result:i32 = s[..count].parse().unwrap();
+  let result:i32 = s[..count].parse().unwrap();  //TODO: Overflow
   *s = &s[count..];
   
-  println!("Zahl {}", result);
-  println!("Rest '{}'", s);
+  //println!("Zahl {}", result);
+  //println!("Rest '{}'", s);
   Box::new(Exp::Int { val: result })
 }
 
@@ -134,20 +134,7 @@ fn ausdruck(s: &mut &str) -> Box<Exp> {
 }
 
 pub fn run() {
-    let e1 = Exp::Int{val : 1};
-
-    println!("\n {}", show_exp(&e1));
-
-
-    let e2 = Box::new(Exp::Int{val : 2});
-
-    let e3 = Exp::Plus{left: Box::new(Exp::Int{val : 1}),
-                       right : Box::new(Exp::Plus{left : e2,
-                                                  right : Box::new(Exp::Int{val : 2})})};
-                                                  // can't use here e2 due to move.
-    println!("\n {}", show_exp(&e3));
-
-    let input = "5+(2+3) * (4+1)";
+    let input = "5+(2+3) * (1+4)";
     let mut rest = input; 
     let root = ausdruck(&mut rest);
     //prüfen ob root none ist
@@ -160,3 +147,9 @@ fn fehler(meldung: &str) -> ! // never returns
  {
      panic!("Fehler: {}", meldung); 
  }
+
+ //TODOs
+ //consts -> enums
+ //ifs -> matches
+ //fehler: don't panic
+ //tests
