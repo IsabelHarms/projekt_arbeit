@@ -4,7 +4,7 @@
 //mod parser;
 //mod tokens;
 //mod test;
-mod exp;
+mod exp2;
 fn main() {
 //    suffix::run();
 //    reverse::run();
@@ -12,5 +12,5 @@ fn main() {
 //    parser::make_exp("(1+2)*(3+4)"); //ups
 //    tokens::run();
 //        test::run();
-exp::run();
+exp2::run();
 }

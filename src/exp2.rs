@@ -28,6 +28,7 @@ fn show_exp(x : &Exp) -> String {
                                     return s; }
     }
 }
+
 fn eval_exp(x: &Exp) -> i32
 {
   match x
@@ -38,29 +39,25 @@ fn eval_exp(x: &Exp) -> i32
   }
 }
 
-// enum doesn't allow comparison using == operator, so:
-const PLUS:i8 = 1; 
-const MAL:i8 = 2;
-const KLAUF:i8 = 3;
-const KLZU:i8 = 4;
-const ZIFFER:i8 = 5;
-const ENDE:i8 = 6;
-const UNGÜLTIG:i8 =0; 
+#[derive(PartialEq)]
+enum Token {
+    PLUS, MAL, KLAUF, KLZU, ZIFFER, ENDE, UNGÜLTIG
+} 
 
 // der Tokenizer:
-fn look_token(s: &mut &str) -> i8 // token remains to be consumed
+fn look_token(s: &mut &str) -> Token // token remains to be consumed
 {
-     *s = (&s).trim();  //discard blanks
-     if s.len()== 0 { return ENDE; }
-     let c: char = s.chars().nth(0).unwrap();
- 
- if c.is_digit(10) { return ZIFFER; }
- if c == '+' { return PLUS; }
- if c == '*' { return MAL;  }
- if c == '(' { return KLAUF;}
- if c == ')' { return KLZU; }
-
- UNGÜLTIG
+ *s = (&s).trim();  //discard blanks
+ if s.len()== 0 { return Token::ENDE; }
+ let c: char = s.chars().nth(0).unwrap();
+ if c.is_digit(10) { return Token::ZIFFER; }
+ match c {
+     '+' => return Token::PLUS,
+     '*' => return Token::MAL,
+     '(' => return Token::KLAUF,
+     ')' => return Token::KLZU,
+     _ => return Token::UNGÜLTIG,
+ }
 }
 
 fn next_char(s: &mut &str) // consume 1 char
@@ -88,7 +85,7 @@ fn zahl(s: &mut &str) -> Box<Exp> // digit ahead, consume digits
 fn summe(s: &mut &str)-> Box<Exp> // Produkt oder Produkt + Summe
 {
      let result = produkt(s);
-     if look_token(s) != PLUS  { return result; }
+     if look_token(s) != Token::  PLUS  { return result; }
      next_char(s);
      Box::new(Exp::Plus { left: result, right: summe(s) } )// return new struct object
 }
@@ -96,41 +93,37 @@ fn summe(s: &mut &str)-> Box<Exp> // Produkt oder Produkt + Summe
  fn produkt(s: &mut &str) -> Box<Exp> // Wert oder Wert * Produkt
 {
     let result = wert(s);
-    if look_token(s) != MAL { return result; }
+    if look_token(s) != Token::MAL { return result; }
     next_char(s);
     Box::new(Exp::Mult { left: result, right: produkt(s) }) // return new struct object
 }
 
 fn wert(s: &mut &str) -> Box<Exp> // geklammerter Ausdruck oder Zahl
 {
-   if look_token(s)== KLAUF
+   if look_token(s)== Token::KLAUF
    {
       next_char(s);// (
       let result = ausdruck(s);
-      if look_token(s) != KLZU { fehler("schließende Klammer fehlt"); }
+      if look_token(s) != Token::KLZU { fehler("schließende Klammer fehlt"); }
       next_char(s); // )
       return result;
    }
-   if look_token(s) == ZIFFER { return zahl(s); }
+   if look_token(s) == Token::ZIFFER { return zahl(s); }
 
    fehler("Syntaxfehler");
  }
 
-// Basic structure of parse functions.
-// Details are missing!
 fn ausdruck(s: &mut &str) -> Box<Exp> {
-    //if *s == "" {
-    //    return None;
-    //} else {
         let token = look_token(s);
-        if token == ENDE { fehler("leerer Ausdruck"); }
-        if token == KLZU { fehler("falsche Klammerung, fehlt Klammer auf?"); }
-        if token ==  MAL { fehler("Syntaxfehler, fehlt ein Faktor?"); }
-        if token == PLUS { next_char(s); }
-   
-        summe(s)
-    //}
+        match token {
+            Token::ENDE => fehler("leerer Ausdruck"),
+            Token::KLZU => fehler("falsche Klammerung, fehlt Klammer auf?"),
+            Token::MAL => fehler("Syntaxfehler, fehlt ein Faktor?"),
+            Token::PLUS => next_char(s),
+            _ => (),
+        }
 
+        summe(s)
 }
 
 pub fn run() {
@@ -149,7 +142,5 @@ fn fehler(meldung: &str) -> ! // never returns
  }
 
  //TODOs
- //consts -> enums: derive PartialEqual
- //ifs -> matches
  //fehler: don't panic
  //tests
