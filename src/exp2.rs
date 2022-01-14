@@ -126,8 +126,8 @@ fn ausdruck(s: &mut &str) -> Box<Exp> {
         summe(s)
 }
 
-pub fn run() {
-    let input = "(2+3) * (1+4)+5 + 8*2";
+pub fn run(input: &str) {
+    //let input = "(2+3) * (1+4)+5 + 8*2";
     let mut rest = input; 
     let root = ausdruck(&mut rest);
     //prüfen ob root none ist
@@ -143,4 +143,3 @@ fn fehler(meldung: &str) -> ! // never returns
 
  //TODOs
  //fehler: don't panic
- //tests
