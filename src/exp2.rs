@@ -41,22 +41,22 @@ fn eval_exp(x: &Exp) -> i32
 
 #[derive(PartialEq)]
 enum Token {
-    PLUS, MAL, KLAUF, KLZU, ZIFFER, ENDE, UNGÜLTIG
+    PLUS, MULT, OPEN, CLOSE, NUMBER, END, INVALID
 } 
 
 // der Tokenizer:
 fn look_token(s: &mut &str) -> Token // token remains to be consumed
 {
  *s = (&s).trim();  //discard blanks
- if s.len()== 0 { return Token::ENDE; }
+ if s.len()== 0 { return Token::END; }
  let c: char = s.chars().nth(0).unwrap();
- if c.is_digit(10) { return Token::ZIFFER; }
+ if c.is_digit(10) { return Token::NUMBER; }
  match c {
      '+' => return Token::PLUS,
-     '*' => return Token::MAL,
-     '(' => return Token::KLAUF,
-     ')' => return Token::KLZU,
-     _ => return Token::UNGÜLTIG,
+     '*' => return Token::MULT,
+     '(' => return Token::OPEN,
+     ')' => return Token::CLOSE,
+     _ => return Token::INVALID,
  }
 }
 
@@ -66,7 +66,7 @@ fn next_char(s: &mut &str) // consume 1 char
 }
 // Der Parser:
 
-fn zahl(s: &mut &str) -> Box<Exp> // digit ahead, consume digits
+fn number(s: &mut &str) -> Box<Exp> // digit ahead, consume digits
 {
   let mut count = 0;  //number of digits
 
@@ -82,64 +82,64 @@ fn zahl(s: &mut &str) -> Box<Exp> // digit ahead, consume digits
   Box::new(Exp::Int { val: result })
 }
 
-fn summe(s: &mut &str)-> Box<Exp> // Produkt oder Produkt + Summe
+fn sum(s: &mut &str)-> Box<Exp> // Produkt oder Produkt + Summe
 {
-     let result = produkt(s);
+     let result = mult(s);
      if look_token(s) != Token::  PLUS  { return result; }
      next_char(s);
-     Box::new(Exp::Plus { left: result, right: summe(s) } )// return new struct object
+     Box::new(Exp::Plus { left: result, right: sum(s) } )// return new struct object
 }
 
- fn produkt(s: &mut &str) -> Box<Exp> // Wert oder Wert * Produkt
+ fn mult(s: &mut &str) -> Box<Exp> // Wert oder Wert * Produkt
 {
-    let result = wert(s);
-    if look_token(s) != Token::MAL { return result; }
+    let result = value(s);
+    if look_token(s) != Token::MULT { return result; }
     next_char(s);
-    Box::new(Exp::Mult { left: result, right: produkt(s) }) // return new struct object
+    Box::new(Exp::Mult { left: result, right: mult(s) }) // return new struct object
 }
 
-fn wert(s: &mut &str) -> Box<Exp> // geklammerter Ausdruck oder Zahl
+fn value(s: &mut &str) -> Box<Exp> // geklammerter Ausdruck oder Zahl
 {
-   if look_token(s)== Token::KLAUF
+   if look_token(s)== Token::OPEN
    {
       next_char(s);// (
-      let result = ausdruck(s);
-      if look_token(s) != Token::KLZU { fehler("schließende Klammer fehlt"); }
+      let result = expression(s);
+      if look_token(s) != Token::CLOSE { error("schließende Klammer fehlt"); }
       next_char(s); // )
       return result;
    }
-   if look_token(s) == Token::ZIFFER { return zahl(s); }
+   if look_token(s) == Token::NUMBER { return number(s); }
 
-   fehler("Syntaxfehler");
+   error("Syntaxfehler");
  }
 
-fn ausdruck(s: &mut &str) -> Box<Exp> {
+fn expression(s: &mut &str) -> Box<Exp> {
         let token = look_token(s);
         match token {
-            Token::ENDE => fehler("leerer Ausdruck"),
-            Token::KLZU => fehler("falsche Klammerung, fehlt Klammer auf?"),
-            Token::MAL => fehler("Syntaxfehler, fehlt ein Faktor?"),
+            Token::END => error("leerer Ausdruck"),
+            Token::CLOSE => error("falsche Klammerung, fehlt Klammer auf?"),
+            Token::MULT => error("Syntaxfehler, fehlt ein Faktor?"),
             Token::PLUS => next_char(s),
             _ => (),
         }
 
-        summe(s)
+        sum(s)
 }
 
 pub fn run(input: &str) {
     //let input = "(2+3) * (1+4)+5 + 8*2";
     let mut rest = input; 
-    let root = ausdruck(&mut rest);
+    let root = expression(&mut rest);
     //prüfen ob root none ist
     println!("Input:  {0}", input);
     println!("Parsed: {0}", show_exp(&root));
     println!("Result: {0}", eval_exp(&root));
 }
 
-fn fehler(meldung: &str) -> ! // never returns
+fn error(meldung: &str) -> ! // never returns
  {
      panic!("Fehler: {}", meldung); 
  }
 
  //TODOs
- //fehler: don't panic
+ //error: don't panic
