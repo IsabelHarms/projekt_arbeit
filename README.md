@@ -1,14 +1,15 @@
-# **Projektarbeit Parser für arithemtische Ausdrücke**
+# **Projektarbeit - Parser für arithmetische Ausdrücke**
 # Isabel Harms
 ## Aufgabenstellung:
+Als Beispiel für die Arbeitsweise eines Parsers sollen in diesem Projekt einfache arithmetische Ausdrücke analysiert und ausgewertet werden, beschränkt auf die beiden Operatoren "+" und "*"
 https://sulzmann.github.io/SoftwareProjekt/schein.html
 
 # **AST**
 # Basisklasse Expressions
 # Trait Exp
-Die Basisklasse für Expressions sollte zunächst durch eine Art Vererbung mithilfe von der rust-spezifischen *trait* Mechanik implementiert werden.
+Die Basisklasse für Expressions sollte zunächst durch Vererbung mithilfe von der rust-spezifischen *traits* Mechanik implementiert werden.
 
-Der ```trait Exp``` ist hierbei das Muster für abgeleitete Strukturen, die alle eine ```eval``` Funktion implementieren sollen. So soll mithilfe von Rekursion jeder Expression Typ seinen eigenen Wert zurückgeben können.
+Der ```trait Exp``` ist hierbei das Muster für abgeleitete Strukturen, die alle eine ```eval``` Funktion implementieren müssen. So soll mithilfe von Rekursion jeder Expression-Typ seinen eigenen Wert zurückgeben können.
 
 ```
 pub trait Exp { 
@@ -26,14 +27,14 @@ impl<T:Exp> Exp for Plus<T> {
     } 
 } 
 ```
-Bei dieser Herangehensweise kam es jedoch zu allerlei Problemen, unteranderem mit dem unbekannten Speicherbedarf von Expressions.
+Bei dieser Herangehensweise kam es jedoch zu allerlei Problemen, unter anderem mit dem *dynamischen* Speicherbedarf von Expressions.
 ## Keyword: dyn
-```dyn ``` kann als Präfix eines *Traits* verwendet werden und ist ein Kennzeichen, dass speicherbedarf erst zur Laufzeit noch ermittelt werden muss.
-Da dies aber nicht das einzige Problem war, habe ich mich nach langem Probieren dazu entschieden die Aufgabenstellung anders zu lösen:
+```dyn ``` kann als Präfix eines *Traits* verwendet werden und kennzeichet, dass Speicherbedarf erst zur Laufzeit noch ermittelt werden muss.
+Da dies aber nicht das einzige Problem war, habe ich mich nach langem Probieren dazu entschieden, die Aufgabenstellung anders zu lösen:
 # Enum Exp
-Obwohl die Varianten durch ein *enum* nicht gezwungen werden können die nötigen Funktionen zu implementieren (später durch ein ```match``` in der Funktion gelöst), halte ich es trotzdem für eine effizientere Lösung.
+Obwohl die Varianten durch ein *enum* nicht erzwungen werden können, die nötigen Funktionen zu implementieren (später durch ein ```match``` in der Funktion gelöst), halte ich es trotzdem für die elegantere Lösung.
 
-Die Arithmetischen Ausdrücke wurden begrenzt und enthalten daher nur folgende Elemente:
+Die arithmetischen Ausdrücke wurden begrenzt und enthalten daher nur folgende Elemente:
 
 ## PlusExp & MultExp
 Plus und Mal verbinden  jeweils 2 untergeordnete **Expressions** und bauen somit die Verzweigungen des *AST* auf.
@@ -57,42 +58,42 @@ Int {                               //         Plus
 },                                  //      Int    Mult
 ```
 ## ErrorExp
-Die ```Error``` Expression soll dazu dienen, einen gefunden Fehler in den AST einzubauen, um ein ```panic!``` und einen folgenden Abbruch des Programmes zu verhindern,um somit zu ermöglichen, dass nach einem absichtlich eingebauten Fehler noch weitere Tests durchlaufen zu können.
+Die ```Error``` Expression soll dazu dienen, einen gefunden Fehler in den AST einzubauen, um ein ```panic!``` und einen folgenden Abbruch des Programmes zu verhindern.So wird ermöglicht, dass nach einem absichtlich eingebauten Fehler noch weitere Tests durchlaufen können.
 ```
 Error {
 },
 ```
 ## Option
-Da es in Rust keine Nullpointer gibt,ermöglichen *Options* eine Funktion, die in anderen Sprachen of als *nullable* bekannt ist.
-Als Option bezeichnet man eine Referenz, welche entweder ein Objekt mit einem Wert, oder keines Beinhaltet; also einen *optionalen* Wert.
+Da es in Rust keine Nullpointer gibt,ermöglichen *Options* eine Funktion, die in anderen Sprachen oft als *nullable* bekannt ist.
+Als Option bezeichnet man eine Referenz, welche entweder ein Objekt, oder keines beinhaltet; also einen *optionalen* Wert.
 ```
 pub enum Option<T> {
     None,
     Some(T),
 }
 ```
-Dies hat eine vielzahl von Verwendungsmöglichkeiten, unter anderem für das *Pattern-Matching* oder *Partielle Funktionen*.
+Dies hat eine Vielzahl von Verwendungsmöglichkeiten, unter anderem für das *Pattern-Matching* oder *Partielle Funktionen*.
 Zwischenzeitlich wurde diese Funktionalität auch in meinem Code verwendet, wurde jedoch nach einiger Zeit durch **Boxen** ersetzt.
 Dennoch wollte ich sie hier integrieren, da sie zur Perfektionierung dieses Programms hilfreich wären um ein weiteres match zu verwenden und ein besseres Einbauen der Fehler in den Parser ermöglichen würden.
 
 ## Box
-Eine *Box* beschreibt eine Referenz zu allokiertem Speicher auf dem *Heap* und wird benötigt um mithilfe einer bekannten statischen Größe auch rekursives Aufrufen zu ermöglichen.
-Da die größe unserer **Expressions** zur Zeit des Kompilierens noch nicht bekannt ist und Rust Aufgrund seines alternativen Memory-Managements sehr streng ist, was unbekannten Speicherbedarf angeht, müssen unsere **Expression** geboxt werden.
+Eine *Box* beschreibt eine Referenz zu allokiertem Speicher auf dem *Heap* und wird benötigt, um mithilfe einer bekannten Größe auch rekursive Verweise zu ermöglichen.
+Da die Größe unserer **Expressions** zur Zeit des Kompilierens noch nicht bekannt ist und Rust aufgrund seines ungewöhnlichen Memory-Managements sehr streng ist, was unbekannten Speicherbedarf angeht, müssen unsere **Expressions** "geboxt" werden.
 
 # **Tokenizer**
 
-Die verschiedenen Zeichen, die in den Ausdrücken vorkommen können werden durch folgendes *enum*  beschrieben:
+Die verschiedenen Characters, die in den Ausdrücken vorkommen können werden durch folgendes *enum*  beschrieben:
 ```
 enum Token {
     PLUS, MULT, OPEN, CLOSE, NUMBER, END, INVALID
 } 
 ```
-Da enums nicht automatisch die Vergleichsoperationen implementieren erben die **Tokens** von der Funktion ```PartialEq```.
+Da enums nicht automatisch die Vergleichsoperationen implementieren, erben die **Tokens** von der Funktion ```PartialEq```.
 
 
-Die Aufgabe des **Tokenizers** ist es lediglich, das nächte/erste Zeichen einzulesen und einem der Varianten zuzuordnen.
+Die Aufgabe des **Tokenizers** ist es lediglich, das nächste Zeichen einzulesen und einer der Varianten zuzuordnen.
 
-Die Methode ```look_token``` soll diese Aufgabe übernehmen und einen eindeutigen ```Token``` zurückgeben, dessen logischer Zusammenhang vom **Parser** interpretiert werden kann.
+Die Methode ```look_token``` übernimmt diese Aufgabe und gibt einen eindeutigen ```Token``` zurück, dessen syntaktische Zulässigkeit vom **Parser** interpretiert werden kann.
 
 
 # **Parser**
@@ -100,8 +101,8 @@ Die Methode ```look_token``` soll diese Aufgabe übernehmen und einen eindeutige
 # Grammatik
 
 ## Erste Version
-Beim ersten Anlauf handelt es sich nicht um eine wirkliche Grammatik. 
-Stattdessen wird nach dem Äußersten Operator gesucht und der Eingabe String wird in einen rechten und einen linken von diesem Operator stehenden Teil eingeteilt. Diese Teile bilden dann ```left``` und ``` right``` von der entsprechenden Variante. Wurde kein äußerstes Plus gefunden, so macht der Parser beim Mal weiter.
+Beim ersten Anlauf handelte es sich nicht um eine wirkliche Grammatik. 
+Stattdessen wurde nach dem äußersten Operator gesucht und der Eingabe-String wurde in einen rechts und einen links von diesem Operator stehenden Teil eingeteilt. Diese Teile bilden dann ```left``` und ``` right``` von der entsprechenden Variante. Wurde kein äußerstes Plus gefunden, so macht der Parser beim Mal weiter.
 Da der Ausdruck hierbei jedoch immer wieder von vorne durchsucht werden muss ist dies suboptimal für die Laufzeit und die Idee wurde verworfen.
 ```
 fn outer_plus(s: &str)-> usize
@@ -145,11 +146,11 @@ Da in beiden Alternativen der Grammatik **Mult** vorkommt, muss dies immer aufge
 ```
 let result = mult(s);
 ```
-Ist das nächste Zeichen nach dem abgeschlossenen Aufruf nun kein Plus handelt es sich um Alternative 1: ```Sum -> Mult``` und das Ergebnis kann zurückgegeben werden.
+Ist das nächste Zeichen nach dem abgeschlossenen Aufruf nun kein Plus, handelt es sich um Alternative 1: ```Sum -> Mult``` und das Ergebnis kann zurückgegeben werden.
 ```
 if look_token(s) != Token::  PLUS  { return result; }
 ```
-Ist das Zeichen jedoch ein Plus, so handelt sich um Alternative 2: ```Sum -> Mult + Sum```. Nachdem das Plus gelöscht wurde, ergibt sich die linke Seite aus der bereits ausgeführten Multiplikation, für die rechte Seite beginnt die Prozedur von vorne.
+Ist das Zeichen jedoch ein Plus, so handelt sich um Alternative 2: ```Sum -> Mult + Sum```. Nachdem das Plus verbraucht wurde, ergibt sich die linke Seite aus der bereits ausgeführten Multiplikation, für die rechte Seite beginnt die Prozedur von vorne.
 ```
 next_char(s); //skip +
 Box::new(Exp::Plus { left: result, right: sum(s) } ) 
@@ -158,15 +159,16 @@ Mit diesem Prinzip können beliebig viele Summanden aneinander gehängt werden, 
 
 Mult + Mult + Mult + ....
 
-In der Funktion ```mult``` wird equivalent vorgegangen, wobei eine Multiplikation immer aus einem Ausdruck besteht, welcher aus einer einfachen Zahl oder einem geklammerten Unterausdruck aufgebaut ist.
+In der Funktion ```mult``` wird equivalent vorgegangen, wobei eine Multiplikation immer aus einer Kette von Ausdrücken besteht, welche aus einer einfachen Zahl oder einem geklammerten Unterausdruck aufgebaut sin.
 
 # **Ergebnis darstellen**
 # show_exp
 ```
+Exp::Plus{left, right} => { let s = "(".to_string() + &show_exp(&left) + &"+".to_string() + &show_exp(&right) + &")".to_string();
 ```
 # eval_exp
 ```
-Exp::Plus{left, right} => { let s = "(".to_string() + &show_exp(&left) + &"+".to_string() + &show_exp(&right) + &")".to_string();
+Exp::Plus{left, right} => eval_exp(&left)+eval_exp(&right),
 ```
 # Tests
 ```
