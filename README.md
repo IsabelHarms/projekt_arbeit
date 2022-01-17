@@ -6,7 +6,7 @@ https://sulzmann.github.io/SoftwareProjekt/schein.html
 # **AST**
 # Basisklasse Expressions
 ## Trait Exp
-Die Basisklasse für Expressions sollte zunächst durch eine Art Vererbung mithilfe von der rust-spezifischen ```trait``` Mechanik implementiert werden.
+Die Basisklasse für Expressions sollte zunächst durch eine Art Vererbung mithilfe von der rust-spezifischen *trait* Mechanik implementiert werden.
 
 Der ```trait Exp``` ist hierbei das Muster für abgeleitete Strukturen, die alle eine ```eval``` Funktion implementieren sollen. So soll mithilfe von Rekursion jeder Expression Typ seinen eigenen Wert zurückgeben können.
 
@@ -26,16 +26,17 @@ impl<T:Exp> Exp for Plus<T> {
     } 
 } 
 ```
-Bei dieser Herangehensweise kam es jedoch zu allerlei Problemen, unteranderem ->
+Bei dieser Herangehensweise kam es jedoch zu allerlei Problemen, unteranderem mit dem unbekanntem Speicherbedarf und Expressions.
 ## Keyword: dyn
-Daher habe ich mich nach langem Probieren dazu entschieden das Problem anders zu lösen:
+```dyn ``` kann als Präfix eines *Traits* verwendet werden und ist ein Kennzeichen, dass speicherbedarf erst zur Laufzeit noch ermittelt werden muss.
+Da dies aber nicht das einzige Problem war, habe ich mich nach langem Probieren dazu entschieden die Aufgabenstellung anders zu lösen:
 # Enum Exp
-Obwohl die Varianten durch ein ```enum``` nicht erzwungen werden können die nötigen Funktionen zu implementieren (später durch ein ```match``` in der Funktion gelöst), halte ich es trotzdem für eine effizientere Lösung.
+Obwohl die Varianten durch ein *enum* nicht gezwungen werden können die nötigen Funktionen zu implementieren (später durch ein ```match``` in der Funktion gelöst), halte ich es trotzdem für eine effizientere Lösung.
 
 Die Arithmetischen Ausdrücke wurden begrenzt und enthalten daher nur folgende Elemente:
 
 ## PlusExp & MultExp
-Plus und Mal verbinden  jeweils 2 untergeordnete **Expressions** und bauen somit die Verzweigungen des **AST* auf.
+Plus und Mal verbinden  jeweils 2 untergeordnete **Expressions** und bauen somit die Verzweigungen des *AST* auf.
 ```
 Plus {                              //         Plus
         left: Box<Exp>,             //        /    \
@@ -49,25 +50,38 @@ Mult {                              //         Mult
 ```
 
 ## IntExp
-Die Endknoten des **AST** bestehen aus Zahlen, welche nur ihren eigenen Wert enthalten.
+Die Endknoten des *AST* bestehen aus Zahlen, welche nur ihren eigenen Wert enthalten.
 ```
 Int {                               //         Plus
         val: i32,                   //        /    \                   
 },                                  //      Int    Mult
 ```
 ## ErrorExp
-Die ```Error``` Expression soll dazu dienen, einen gefunden Fehler in den AST einzubauen, um ein ```panic!``` und einen folgenden Abbruch des Programmes zu verhindern,um somit zu ermöglichen, dass z.B. nach einem absichtlich eingebauten Fehler noch weitere Tests durchlaufen zu können. Außerdem ist es so möglich die Stelle und den Grund des Fehlers nach Oben durchzureichen.
+Die ```Error``` Expression soll dazu dienen, einen gefunden Fehler in den AST einzubauen, um ein ```panic!``` und einen folgenden Abbruch des Programmes zu verhindern,um somit zu ermöglichen, dass nach einem absichtlich eingebauten Fehler noch weitere Tests durchlaufen zu können.
 ```
+Error {
+},
 ```
-# Option
+## Option
+Da es in Rust keine Nullpointer gibt,ermöglichen *Options* eine Funktion, die in anderen Sprachen of als *nullable* bekannt ist.
+Als Option bezeichnet man eine Referenz, welche entweder ein Objekt mit einem Wert, oder keines Beinhaltet; also einen *optionalen* Wert.
+```
+pub enum Option<T> {
+    None,
+    Some(T),
+}
+```
+Dies hat eine vielzahl von Verwendungsmöglichkeiten, unter anderem für das *Pattern-Matching* oder *Partielle Funktionen*.
+Zwischenzeitlich wurde diese Funktionalität auch in meinem Code verwendet, wurde jedoch nach einiger Zeit durch **Boxen** ersetzt.
+Dennoch wollte ich sie hier integrieren, da sie zur Perfektionierung dieses Programms hilfreich wären um ein weiteres match zu verwenden und ein besseres Einbauen der Fehler in den Parser ermöglichen würden.
 
-# Box
-Eine **Box** beschreibt eine Referenz zu allokiertem Speicher auf dem **Heap** und wird benötigt um mithilfe einer bekannten statischen Größe auch bei rekursiven Aufrufen eine ...sicherzustellen.
-Da die größe unserer **Expressions** zur Zeit des Kompilierens noch nicht bekannt ist und Rust sehr streng ist, was ... angeht müssen alle **Expression** geboxt werden.
+## Box
+Eine *Box* beschreibt eine Referenz zu allokiertem Speicher auf dem *Heap* und wird benötigt um mithilfe einer bekannten statischen Größe auch rekursives Aufrufen zu ermöglichen.
+Da die größe unserer **Expressions** zur Zeit des Kompilierens noch nicht bekannt ist und Rust Aufgrund seines alternativen Memory-Managements sehr streng ist, was unbekannten Speicherbedarf angeht, müssen unsere **Expression** geboxt werden.
 
 # **Tokenizer**
 
-Die verschiedenen Zeichen, die in den Ausdrücken vorkommen können werden durch folgendes **enum** beschrieben:
+Die verschiedenen Zeichen, die in den Ausdrücken vorkommen können werden durch folgendes *enum*  beschrieben:
 ```
 enum Token {
     PLUS, MULT, OPEN, CLOSE, NUMBER, END, INVALID
@@ -125,9 +139,28 @@ Number -> [0..9] | [1..9]*10 + Number
 Entspricht ein **Token** keinem der vorgegebenen Optionen, so wird ein Fehler ausgegeben.
 Der Zustand **Exp** scheint überflüssig, hier findet jedoch der Übersicht halber eine erste Fehlerüberprüfung statt, um den Code in **Sum** zu vereinfachen.
 ## Beispiel Anhand von Plus
+Zur Vereinfachung gehen wir von einem gültigen Asudruck aus.
+
+Da in beiden Alternativen der Grammatik **Mult** vorkommt, muss dies immer aufgerufen werden.
 ```
+let result = mult(s);
 ```
-# **Evaluate Results**
+Ist das nächste Zeichen nach dem abgeschlossenen Aufruf nun kein Plus handelt es sich um Alternative 1: ```Sum -> Mult``` und das Ergebnis kann zurückgegeben werden.
+```
+if look_token(s) != Token::  PLUS  { return result; }
+```
+Ist das Zeichen jedoch ein Plus, so handelt sich um Alternative 2: ```Sum -> Mult + Sum```. Nachdem das Plus gelöscht wurde, ergibt sich die linke Seite aus der bereits ausgeführten Multiplikation, für die rechte Seite beginnt die Prozedur von vorne.
+```
+next_char(s); //skip +
+Box::new(Exp::Plus { left: result, right: sum(s) } ) 
+```
+Mit diesem Prinzip können beliebig viele Summanden aneinander gehängt werden, bei denen es sich jeweils um ein Produkt handelt:
+
+Mult + Mult + Mult + ....
+
+In der Funktion ```mult``` wird equivalent vorgegangen, wobei eine Multiplikation immer aus einem Ausdruck besteht, welcher aus einer einfachen Zahl oder einem geklammerten Unterausdruck aufgebaut ist.
+
+# **Ergebnis darstellen**
 # show_exp
 ```
 ```
