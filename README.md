@@ -5,6 +5,7 @@ https://sulzmann.github.io/SoftwareProjekt/schein.html
 
 # **AST**
 # Basisklasse Expressions
+## Trait Exp
 Die Basisklasse für Expressions sollte zunächst durch eine Art Vererbung mithilfe von der rust-spezifischen ```trait``` Mechanik implementiert werden.
 
 Der ```trait Exp``` ist hierbei das Muster für abgeleitete Strukturen, die alle eine ```eval``` Funktion implementieren sollen. So soll mithilfe von Rekursion jeder Expression Typ seinen eigenen Wert zurückgeben können.
@@ -27,11 +28,11 @@ impl<T:Exp> Exp for Plus<T> {
 
 ```
 Bei dieser Herangehensweise kam es jedoch zu allerlei Problemen, unteranderem ->
-# Keyword: dyn
+## Keyword: dyn
 Daher habe ich mich nach langem Probieren dazu entschieden das Problem anders zu lösen:
-# **Enum Exp**
+# Enum Exp
 Obwohl die Varianten durch ein ```enum``` nicht erzwungen werden können die nötigen Funktionen zu implementieren (später durch ein ```match``` gelöst), halte ich es trotzdem für eine effizientere Lösung.
-# Abgeleitete Varianten für die einzelnen Fälle
+
 Die Arithmetischen Ausdrücke wurden begrenzt und enthalten daher nur folgende Elemente:
 
 ## PlusExp & MultExp
@@ -96,6 +97,7 @@ Number -> [0..9] | [1..9]*10 + Number
 ```
 # eval_exp
 ```
+Exp::Plus{left, right} => { let s = "(".to_string() + &show_exp(&left) + &"+".to_string() + &show_exp(&right) + &")".to_string();
 ```
 # Tests
 ```
