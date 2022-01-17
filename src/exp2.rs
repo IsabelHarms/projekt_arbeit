@@ -12,6 +12,9 @@ enum Exp {
     Mult {
         left: Box<Exp>,  // Box = heap allocated necessary due to recursive definition
         right: Box<Exp>,
+    },
+    Error {
+        error: str,
     }
 }
 
@@ -26,6 +29,7 @@ fn show_exp(x : &Exp) -> String {
         Exp::Mult{left, right} => { let s = "(".to_string() + &show_exp(&left)
                                             + &"*".to_string() + &show_exp(&right) + &")".to_string();
                                     return s; }
+        Exp::Error{error} => {return "".to_string();}
     }
 }
 
@@ -36,15 +40,16 @@ fn eval_exp(x: &Exp) -> i32
     Exp::Int{val} => *val,
     Exp::Plus{left, right} => eval_exp(&left)+eval_exp(&right),
     Exp::Mult{left, right} => eval_exp(&left)*eval_exp(&right),
+    Exp::Error{error} => error(""),
   }
 }
 
+// der Tokenizer:
 #[derive(PartialEq)]
 enum Token {
     PLUS, MULT, OPEN, CLOSE, NUMBER, END, INVALID
 } 
 
-// der Tokenizer:
 fn look_token(s: &mut &str) -> Token // token remains to be consumed
 {
  *s = (&s).trim();  //discard blanks
@@ -136,9 +141,9 @@ pub fn run(input: &str) {
     println!("Result: {0}", eval_exp(&root));
 }
 
-fn error(meldung: &str) -> ! // never returns
+fn error(meldung: &str) -> Box<Exp> // never returns
  {
-     panic!("Fehler: {}", meldung); 
+     Box::new(Exp::Error{error: meldung}) 
  }
 
  //TODOs
