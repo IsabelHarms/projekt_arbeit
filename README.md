@@ -5,7 +5,7 @@ https://sulzmann.github.io/SoftwareProjekt/schein.html
 
 # **AST**
 # Basisklasse Expressions
-## Trait Exp
+# Trait Exp
 Die Basisklasse für Expressions sollte zunächst durch eine Art Vererbung mithilfe von der rust-spezifischen *trait* Mechanik implementiert werden.
 
 Der ```trait Exp``` ist hierbei das Muster für abgeleitete Strukturen, die alle eine ```eval``` Funktion implementieren sollen. So soll mithilfe von Rekursion jeder Expression Typ seinen eigenen Wert zurückgeben können.
@@ -26,7 +26,7 @@ impl<T:Exp> Exp for Plus<T> {
     } 
 } 
 ```
-Bei dieser Herangehensweise kam es jedoch zu allerlei Problemen, unteranderem mit dem unbekanntem Speicherbedarf und Expressions.
+Bei dieser Herangehensweise kam es jedoch zu allerlei Problemen, unteranderem mit dem unbekannten Speicherbedarf von Expressions.
 ## Keyword: dyn
 ```dyn ``` kann als Präfix eines *Traits* verwendet werden und ist ein Kennzeichen, dass speicherbedarf erst zur Laufzeit noch ermittelt werden muss.
 Da dies aber nicht das einzige Problem war, habe ich mich nach langem Probieren dazu entschieden die Aufgabenstellung anders zu lösen:
