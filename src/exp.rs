@@ -34,11 +34,22 @@ fn show_exp(x : &Exp) -> String {
 **/
 // Evaluation for expressions
 fn eval_exp(x: Option<&Exp>) -> Option<i32> {
+    if !x.is_some() {return None;}
     let y = x.unwrap();
     match y {
       Exp::Int{val} => Some(*val),
-      Exp::Plus{left, right} => eval_exp(&left),
-      Exp::Mult{left, right} => eval_exp(&left),
+      Exp::Plus{left, right} => {
+          if left.is_none() || right.is_none() {
+             return None; 
+          }
+          return eval_exp((&left));
+      }
+      Exp::Mult{left, right} => {
+        if left.is_none() || right.is_none() {
+           return None; 
+        }
+        return eval_exp(&left);
+    }
     }
 }
 
@@ -110,18 +121,14 @@ fn value(s: &mut &str) -> Option<Box<Exp>> {// geklammerter Ausdruck oder Zahl
 
 fn expression(s: &mut &str) -> Option<Box<Exp>> {
         let token = look_token(s);
-
-        //match
-        //plus => return Some(sum(next char))
-        // _ => return Some(sum(s))
-
-        if token == Token::END { return None; }
-        if token == Token::CLOSE { return None; }
-        if token == Token::MULT { return None; }
-        if token == Token::INVALID {return None;}
-        if token == Token::PLUS { next_char(s); }
-
-        sum(s)
+        if token == Token::PLUS { next_char(s); } //skip +
+        match token {
+            Token::END => return None,
+            Token::CLOSE => return None,
+            Token::MULT => return None,
+            Token::INVALID => return None,
+            _ => return sum(s),
+        }
 }
 
 pub fn run(input: &str) {
@@ -129,6 +136,7 @@ pub fn run(input: &str) {
     let root = expression(&mut rest);
     println!("Input:  {0}", input);
     //println!("Parsed: {0}", show_exp(&root.unwrap()));
-    println!("Result: {0}", eval_exp(&root).unwrap());
+    let result = eval_exp(&root.as_ref());
+    println!("Result: {0}", result.unwrap());
 }
 
