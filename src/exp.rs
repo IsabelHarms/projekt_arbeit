@@ -1,23 +1,24 @@
 
-/* AST for simple expression language and some basic functionality */
-
+// AST
 enum Exp {
     Int {
         val: i32,
     },
     Plus {
-        left: Box<Exp>,  // Box = heap allocated necessary due to recursive definition
-        right: Box<Exp>,
+        left: Option<Box<Exp>>,  // Box = heap allocated necessary due to recursive definition
+        right: Option<Box<Exp>>,
     },
     Mult {
-        left: Box<Exp>,  // Box = heap allocated necessary due to recursive definition
-        right: Box<Exp>,
-    }
+        left: Option<Box<Exp>>,
+        right: Option<Box<Exp>>,
+    },
 }
 
 
-// Show for expressions.
-fn show_exp(x : &Exp) -> String {
+// Show for expressions
+/*fn show_exp(x : Option<&Exp>) -> Option<String> {
+    //if(x=none) return None
+    x = x.unwrap();
     match x {
         Exp::Int{val} => { return val.to_string(); }
         Exp::Plus{left, right} => { let s = "(".to_string() + &show_exp(&left)
@@ -26,130 +27,108 @@ fn show_exp(x : &Exp) -> String {
         Exp::Mult{left, right} => { let s = "(".to_string() + &show_exp(&left)
                                             + &"*".to_string() + &show_exp(&right) + &")".to_string();
                                     return s; }
+        Exp::Error{} => {return "Fehler".to_string();}
     }
 }
-fn eval_exp(x: &Exp) -> i32
-{
-  match x
-  {
-    Exp::Int{val} => *val,
-    Exp::Plus{left, right} => eval_exp(&left)+eval_exp(&right),
-    Exp::Mult{left, right} => eval_exp(&left)*eval_exp(&right),
-  }
+**/
+// Evaluation for expressions
+fn eval_exp(x: Option<&Exp>) -> Option<i32> {
+    let y = x.unwrap();
+    match y {
+      Exp::Int{val} => Some(*val),
+      Exp::Plus{left, right} => eval_exp(&left),//.unwrap_or(default: T)//+eval_exp(Some(&right))
+      Exp::Mult{left, right} => eval_exp(&left),
+      //Exp::Error{} => None, //Urgh
+    }
 }
 
-// enum doesn't allow comparison using == operator, so:
-const PLUS:i8 = 1; 
-const MAL:i8 = 2;
-const KLAUF:i8 = 3;
-const KLZU:i8 = 4;
-const ZIFFER:i8 = 5;
-const ENDE:i8 = 6;
-const UNGÜLTIG:i8 =0; 
 
-// der Tokenizer:
-fn look_token(s: &mut &str) -> i8 // token remains to be consumed
-{
-     *s = (&s).trim();  //discard blanks
-     if s.len()== 0 { return ENDE; }
-     let c: char = s.chars().nth(0).unwrap();
- 
- if c.is_digit(10) { return ZIFFER; }
- if c == '+' { return PLUS; }
- if c == '*' { return MAL;  }
- if c == '(' { return KLAUF;}
- if c == ')' { return KLZU; }
+//Tokenizer
+#[derive(PartialEq)]
+enum Token {
+    PLUS, MULT, OPEN, CLOSE, NUMBER, END, INVALID
+} 
 
- UNGÜLTIG
+fn look_token(s: &mut &str) -> Token { // token remains to be consumed
+ *s = (&s).trim();  //discard blanks
+ if s.len()== 0 { return Token::END; }
+ let c: char = s.chars().nth(0).unwrap();
+ if c.is_digit(10) { return Token::NUMBER; }
+ match c {
+     '+' => return Token::PLUS,
+     '*' => return Token::MULT,
+     '(' => return Token::OPEN,
+     ')' => return Token::CLOSE,
+     _ => return Token::INVALID,
+ }
 }
 
-fn next_char(s: &mut &str) // consume 1 char
-{
+fn next_char(s: &mut &str) { // consume 1 char
    *s = &s[1..];
 }
-// Der Parser:
 
-fn zahl(s: &mut &str) -> Box<Exp> // digit ahead, consume digits
-{
+// Der Parser:
+fn number(s: &mut &str) -> Option<Box<Exp>> { // digit ahead, consume digits
   let mut count = 0;  //number of digits
 
-  while count < s.len() && s.chars().nth(count).unwrap().is_digit(10)
-  {
+  while count < s.len() && s.chars().nth(count).unwrap().is_digit(10) {
 	count += 1;
   }  
-  let result:i32 = s[..count].parse().unwrap();  //TODO: Overflow
+  let result:i32 = s[..count].parse().unwrap();
   *s = &s[count..];
-  
-  //println!("Zahl {}", result);
-  //println!("Rest '{}'", s);
-  Box::new(Exp::Int { val: result })
+
+  Some(Box::new(Exp::Int { val: result }))
 }
 
-fn summe(s: &mut &str)-> Box<Exp> // Produkt oder Produkt + Summe
-{
-     let result = produkt(s);
-     if look_token(s) != PLUS  { return result; }
-     next_char(s);
-     Box::new(Exp::Plus { left: result, right: summe(s) } )// return new struct object
+fn sum(s: &mut &str)-> Option<Box<Exp>> { // Produkt oder Produkt + Summe
+     let result = mult(s);
+     if look_token(s) == Token::INVALID {return None;}
+     if look_token(s) != Token::  PLUS  { return result; }
+     next_char(s); //skip +
+     Some(Box::new(Exp::Plus { left: result, right: sum(s) } ))
 }
 
- fn produkt(s: &mut &str) -> Box<Exp> // Wert oder Wert * Produkt
-{
-    let result = wert(s);
-    if look_token(s) != MAL { return result; }
-    next_char(s);
-    Box::new(Exp::Mult { left: result, right: produkt(s) }) // return new struct object
+ fn mult(s: &mut &str) -> Option<Box<Exp>> { // Wert oder Wert * Produkt
+    let result = value(s);
+    if look_token(s) != Token::MULT { return result; }
+    next_char(s); //skip *
+    Some(Box::new(Exp::Mult { left: result, right: mult(s) })) // return new struct object
 }
 
-fn wert(s: &mut &str) -> Box<Exp> // geklammerter Ausdruck oder Zahl
-{
-   if look_token(s)== KLAUF
-   {
+fn value(s: &mut &str) -> Option<Box<Exp>> {// geklammerter Ausdruck oder Zahl
+   if look_token(s)== Token::OPEN {
       next_char(s);// (
-      let result = ausdruck(s);
-      if look_token(s) != KLZU { fehler("schließende Klammer fehlt"); }
+      let result = expression(s);
+      if look_token(s) != Token::CLOSE { return None; }
       next_char(s); // )
       return result;
    }
-   if look_token(s) == ZIFFER { return zahl(s); }
+   if look_token(s) == Token::NUMBER { return number(s); }
 
-   fehler("Syntaxfehler");
+   None
  }
 
-// Basic structure of parse functions.
-// Details are missing!
-fn ausdruck(s: &mut &str) -> Box<Exp> {
-    //if *s == "" {
-    //    return None;
-    //} else {
+fn expression(s: &mut &str) -> Option<Box<Exp>> {
         let token = look_token(s);
-        if token == ENDE { fehler("leerer Ausdruck"); }
-        if token == KLZU { fehler("falsche Klammerung, fehlt Klammer auf?"); }
-        if token ==  MAL { fehler("Syntaxfehler, fehlt ein Faktor?"); }
-        if token == PLUS { next_char(s); }
-   
-        summe(s)
-    //}
 
+        //match
+        //plus => return Some(sum(next char))
+        // _ => return Some(sum(s))
+
+        if token == Token::END { return None; }
+        if token == Token::CLOSE { return None; }
+        if token == Token::MULT { return None; }
+        if token == Token::INVALID {return None;}
+        if token == Token::PLUS { next_char(s); }
+
+        sum(s)
 }
 
-pub fn run() {
-    let input = "(2+3) * (1+4)+5 + 8*2";
+pub fn run(input: &str) {
     let mut rest = input; 
-    let root = ausdruck(&mut rest);
-    //prüfen ob root none ist
+    let root = expression(&mut rest);
     println!("Input:  {0}", input);
-    println!("Parsed: {0}", show_exp(&root));
-    println!("Result: {0}", eval_exp(&root));
+    //println!("Parsed: {0}", show_exp(&root.unwrap()));
+    println!("Result: {0}", eval_exp(&root).unwrap());
 }
 
-fn fehler(meldung: &str) -> ! // never returns
- {
-     panic!("Fehler: {}", meldung); 
- }
-
- //TODOs
- //consts -> enums: derive PartialEqual
- //ifs -> matches
- //fehler: don't panic
- //tests

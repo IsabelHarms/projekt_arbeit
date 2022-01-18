@@ -80,6 +80,19 @@ Dennoch wollte ich sie hier integrieren, da sie zur Perfektionierung dieses Prog
 Eine *Box* beschreibt eine Referenz zu allokiertem Speicher auf dem *Heap* und wird benötigt, um mithilfe einer bekannten Größe auch rekursive Verweise zu ermöglichen.
 Da die Größe unserer **Expressions** zur Zeit des Kompilierens noch nicht bekannt ist und Rust aufgrund seines ungewöhnlichen Memory-Managements sehr streng ist, was unbekannten Speicherbedarf angeht, müssen unsere **Expressions** "geboxt" werden.
 
+# **Ergebnis darstellen**
+# show_exp
+```
+Exp::Plus{left, right} => { let s = "(".to_string() + &show_exp(&left) + &"+".to_string() + &show_exp(&right) + &")".to_string();
+```
+# eval_exp
+```
+Exp::Plus{left, right} => eval_exp(&left)+eval_exp(&right),
+```
+# Tests
+```
+```
+
 # **Tokenizer**
 
 Die verschiedenen Characters, die in den Ausdrücken vorkommen können werden durch folgendes *enum*  beschrieben:
@@ -161,18 +174,6 @@ Mult + Mult + Mult + ....
 
 In der Funktion ```mult``` wird equivalent vorgegangen, wobei eine Multiplikation immer aus einer Kette von Ausdrücken besteht, welche aus einer einfachen Zahl oder einem geklammerten Unterausdruck aufgebaut sin.
 
-# **Ergebnis darstellen**
-# show_exp
-```
-Exp::Plus{left, right} => { let s = "(".to_string() + &show_exp(&left) + &"+".to_string() + &show_exp(&right) + &")".to_string();
-```
-# eval_exp
-```
-Exp::Plus{left, right} => eval_exp(&left)+eval_exp(&right),
-```
-# Tests
-```
-```
 
 # **Quellen**
 
