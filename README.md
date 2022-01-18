@@ -173,8 +173,44 @@ Mit diesem Prinzip können beliebig viele Summanden aneinander gehängt werden, 
 Mult + Mult + Mult + ....
 
 In der Funktion ```mult``` wird equivalent vorgegangen, wobei eine Multiplikation immer aus einer Kette von Ausdrücken besteht, welche aus einer einfachen Zahl oder einem geklammerten Unterausdruck aufgebaut sin.
+```
+enum Exp {
+    Int {
+        val: i32,
+    },
+    Plus {
+        left: Box<Exp>,  // Box = heap allocated necessary due to recursive definition
+        right: Box<Exp>,
+    },
+    Mult {
+        left: Box<Exp>,  // Box = heap allocated necessary due to recursive definition
+        right: Box<Exp>,
+    }
+}
 
 
+// Show for expressions.
+fn show_exp(x : &Exp) -> String {
+    match x {
+        Exp::Int{val} => { return val.to_string(); }
+        Exp::Plus{left, right} => { let s = "(".to_string() + &show_exp(&left)
+                                             + &"+".to_string() + &show_exp(&right) + &")".to_string();
+                                    return s; }
+        Exp::Mult{left, right} => { let s = "(".to_string() + &show_exp(&left)
+                                            + &"*".to_string() + &show_exp(&right) + &")".to_string();
+                                    return s; }
+    }
+}
+fn eval_exp(x: &Exp) -> i32
+{
+  match x
+  {
+    Exp::Int{val} => *val,
+    Exp::Plus{left, right} => eval_exp(&left)+eval_exp(&right),
+    Exp::Mult{left, right} => eval_exp(&left)*eval_exp(&right),
+  }
+}
+```
 # **Quellen**
 
 https://doc.rust-lang.org/book/title-page.html

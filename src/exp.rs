@@ -16,7 +16,8 @@ enum Exp {
 
 
 // Show for expressions
-/*fn show_exp(x : Option<&Exp>) -> Option<String> {
+/**
+fn show_exp(x : &Exp) -> String {
     //if(x=none) return None
     x = x.unwrap();
     match x {
@@ -36,9 +37,8 @@ fn eval_exp(x: Option<&Exp>) -> Option<i32> {
     let y = x.unwrap();
     match y {
       Exp::Int{val} => Some(*val),
-      Exp::Plus{left, right} => eval_exp(&left),//.unwrap_or(default: T)//+eval_exp(Some(&right))
+      Exp::Plus{left, right} => eval_exp(&left),
       Exp::Mult{left, right} => eval_exp(&left),
-      //Exp::Error{} => None, //Urgh
     }
 }
 
