@@ -101,7 +101,7 @@ fn value(s: &mut &str) -> Option<Box<Exp>> {// geklammerter Ausdruck oder Zahl
    if look_token(s)== Token::OPEN {
       next_char(s);// (
       let result = expression(s);
-      if look_token(s) != Token::CLOSE { return None; }
+      if result.is_some() && look_token(s) != Token::CLOSE { return error("Schließende Klammer fehlt"); }
       next_char(s); // )
       return result;
    }
@@ -114,10 +114,10 @@ fn expression(s: &mut &str) -> Option<Box<Exp>> {
         let token = look_token(s);
         if token == Token::PLUS { next_char(s); } //skip +
         match token {
-            Token::END => return None,
-            Token::CLOSE => return None,
-            Token::MULT => return None,
-            Token::INVALID => return None,
+            Token::END => return error("Unzulässiges Ende"),
+            Token::CLOSE => return error("Öffnende Klammer fehlt"),
+            Token::MULT => return error("Ungültiges Mal"),
+            Token::INVALID => return error("Ungültiges Zeichen"),
             _ => return sum(s),
         }
 }
@@ -132,7 +132,10 @@ pub fn run(input: &str) {
     let root = expression(&mut rest);
     println!("Input:  {0}", input);
     if root.is_none() {
+        let diff = input.len() - rest.len();
+        println!("{:->1$}","^", diff + 9);
         println!("Result: Fehler");
+
     }
     else {
         let tree = &root.unwrap();
@@ -140,4 +143,3 @@ pub fn run(input: &str) {
         println!("Result: {0}", eval_exp(tree));
     }
 }
-
