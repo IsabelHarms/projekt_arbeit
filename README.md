@@ -68,7 +68,6 @@ Error {
 
 # **Ergebnis darstellen**
 
-# Methoden in exp.rs
 ## show_exp()
 Diese Funktion sucht rekursiv die Struktur des Baumes ab, konvertiert die Werte der Endknoten zu Strings und fügt anhand der Verzweigungen und Exp-Typen die richtigen Klammern und Opratoren.
 ```
@@ -162,7 +161,7 @@ Mult + Mult + Mult + ....
 In der Funktion ```mult``` wird equivalent vorgegangen, wobei eine Multiplikation immer aus einer Kette von Ausdrücken besteht, welche aus einer einfachen Zahl oder einem geklammerten Unterausdruck aufgebaut sind.
 ## Box
 Eine *Box* beschreibt eine Referenz zu allokiertem Speicher auf dem *Heap* und wird benötigt, um mithilfe einer bekannten Größe auch rekursive Verweise zu ermöglichen.
-Da die Größe unserer **Expressions** zur Zeit des Kompilierens noch nicht bekannt ist und Rust aufgrund seines ungewöhnlichen Memory-Managements sehr streng ist, was unbekannten Speicherbedarf angeht, müssen unsere **Expressions** "geboxt" werden.
+Da die Größe der **Expressions** zur Zeit des Kompilierens noch nicht bekannt ist und Rust aufgrund seines ungewöhnlichen Memory-Managements sehr streng ist, was unbekannten Speicherbedarf angeht, müssen die **Expressions** "geboxt" werden.
 
 ## Option
 Da es in Rust keine Nullpointer gibt,ermöglichen *Options* eine Funktion, die in anderen Sprachen oft als *nullable* bekannt ist.
@@ -191,6 +190,18 @@ fn error(message: &str)-> Option<Box<Exp>> {
 }
 ```
 
+Eine Fehlerausgabe erfolgt in jeder Funktion der Grammatik außer in ```number```, da dort bereits eine führende Ziffer erkannt wurde und die Zahl abgearbeitet wird, bis keine Ziffer mehr folgt.
+
+Im Startzustand werden beispielsweise folgende Prüfungen durchgeführt:
+```
+match token {
+    Token::END => return error("Unzulässiges Ende"),
+    Token::CLOSE => return error("Öffnende Klammer fehlt"),
+    Token::MULT => return error("Ungültiges Mal"),
+    Token::INVALID => return error("Ungültiges Zeichen"),
+    _ => return sum(s),
+}
+```
 # Tests
 Die Tests laufen über das file main.rs. Dort habe ich 2 Arrays mit arithmetischen Ausdrücken und jeweiligen Lösungen hinterlegt, welche in einer einfachen Schleife durchlaufen und evaluiert werden.
 Für jeden Test wird eine Nummer und das erwartete Ergebnis ausgeben, sowie die ```run``` methode von exp.rs aufgerufen.
@@ -199,9 +210,9 @@ Für jeden Test wird eine Nummer und das erwartete Ergebnis ausgeben, sowie die 
 
 Zunächst wird, egal ob der Parser einen Baum erzeugt hat oder nicht, der Original-Text gedruckt.
 
-Nun wird die Methode ```expression```, die als Startzustand unserer Grammatik dient, mit einem *mutable* Pointer auf unseren Ausdruck aufgerufen. Der Parser erzeugt einen Baum, oder im Fehlerfall ein *None*.
+Nun wird die Methode ```expression```, die als Startzustand der Grammatik dient, mit einem *mutable* Pointer auf den Ausdruck aufgerufen. Der Parser erzeugt einen Baum, oder im Fehlerfall ein *None*.
 
-Im Falle eines gültigen *AST* können unsere Untermethoden aufgerufen werden.
+Im Falle eines gültigen *AST* können die bekannten Untermethoden aufgerufen werden.
 ```
 let tree = &root.unwrap();
 println!("Parsed: {0}", show_exp(tree));
@@ -212,7 +223,7 @@ Gibt es jedoch keinen *AST*, also gilt: ```root.is_none()```, so wird stattdesse
 println!("{:->1$}","^", input.len() - rest.len()+ label.len() + 1);
 println!("Result: Fehler");
 ```
-Beispielsweise ergibt sich so für einen unserer Tests folgende Ausgabe:
+Beispielsweise ergibt sich so für einen meiner Tests folgende Ausgabe:
 ```
 Test No.7:
 Schließende Klammer fehlt
