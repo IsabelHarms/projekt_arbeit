@@ -5,21 +5,17 @@ enum Exp {
         val: i32,
     },
     Plus {
-        left: Option<Box<Exp>>,  // Box = heap allocated necessary due to recursive definition
-        right: Option<Box<Exp>>,
+        left: Box<Exp>,  // Box = heap allocated necessary due to recursive definition
+        right: Box<Exp>,
     },
     Mult {
-        left: Option<Box<Exp>>,
-        right: Option<Box<Exp>>,
+        left: Box<Exp>,
+        right: Box<Exp>,
     },
 }
 
-
-// Show for expressions
-/**
+// Show for expressions.
 fn show_exp(x : &Exp) -> String {
-    //if(x=none) return None
-    x = x.unwrap();
     match x {
         Exp::Int{val} => { return val.to_string(); }
         Exp::Plus{left, right} => { let s = "(".to_string() + &show_exp(&left)
@@ -28,29 +24,16 @@ fn show_exp(x : &Exp) -> String {
         Exp::Mult{left, right} => { let s = "(".to_string() + &show_exp(&left)
                                             + &"*".to_string() + &show_exp(&right) + &")".to_string();
                                     return s; }
-        Exp::Error{} => {return "Fehler".to_string();}
     }
 }
-**/
+
 // Evaluation for expressions
-fn eval_exp(x: Option<&Exp>) -> Option<i32> {
-    if !x.is_some() {return None;}
-    let y = x.unwrap();
-    match y {
-      Exp::Int{val} => Some(*val),
-      Exp::Plus{left, right} => {
-          if left.is_none() || right.is_none() {
-             return None; 
-          }
-          return eval_exp((&left));
-      }
-      Exp::Mult{left, right} => {
-        if left.is_none() || right.is_none() {
-           return None; 
-        }
-        return eval_exp(&left);
-    }
-    }
+fn eval_exp(x: &Exp) -> i32 {
+  match x {
+    Exp::Int{val} => *val,
+    Exp::Plus{left, right} => eval_exp(&left)+eval_exp(&right),
+    Exp::Mult{left, right} => eval_exp(&left)*eval_exp(&right),
+  }
 }
 
 
@@ -93,17 +76,25 @@ fn number(s: &mut &str) -> Option<Box<Exp>> { // digit ahead, consume digits
 
 fn sum(s: &mut &str)-> Option<Box<Exp>> { // Produkt oder Produkt + Summe
      let result = mult(s);
-     if look_token(s) == Token::INVALID {return None;}
+     if look_token(s) == Token::INVALID {return error("Ungültiges Zeichen");}
      if look_token(s) != Token::  PLUS  { return result; }
      next_char(s); //skip +
-     Some(Box::new(Exp::Plus { left: result, right: sum(s) } ))
+     let right_value = sum(s);
+     if result.is_none() || right_value.is_none() {
+         return None;
+     }
+     Some(Box::new(Exp::Plus { left: result.unwrap(), right: right_value.unwrap() } ))
 }
 
  fn mult(s: &mut &str) -> Option<Box<Exp>> { // Wert oder Wert * Produkt
     let result = value(s);
     if look_token(s) != Token::MULT { return result; }
     next_char(s); //skip *
-    Some(Box::new(Exp::Mult { left: result, right: mult(s) })) // return new struct object
+    let right_value = mult(s);
+     if result.is_none() || right_value.is_none() {
+         return None;
+     }
+     Some(Box::new(Exp::Mult { left: result.unwrap(), right: right_value.unwrap() } ))
 }
 
 fn value(s: &mut &str) -> Option<Box<Exp>> {// geklammerter Ausdruck oder Zahl
@@ -131,12 +122,22 @@ fn expression(s: &mut &str) -> Option<Box<Exp>> {
         }
 }
 
+fn error(message: &str)-> Option<Box<Exp>> {
+    println!("{}", message);
+    return None;
+}
+
 pub fn run(input: &str) {
     let mut rest = input; 
     let root = expression(&mut rest);
     println!("Input:  {0}", input);
-    //println!("Parsed: {0}", show_exp(&root.unwrap()));
-    let result = eval_exp(&root.as_ref());
-    println!("Result: {0}", result.unwrap());
+    if root.is_none() {
+        println!("Result: Fehler");
+    }
+    else {
+        let tree = &root.unwrap();
+        println!("Parsed: {0}", show_exp(tree));
+        println!("Result: {0}", eval_exp(tree));
+    }
 }
 
