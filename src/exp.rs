@@ -76,7 +76,7 @@ fn number(s: &mut &str) -> Option<Box<Exp>> { // digit ahead, consume digits
 
 fn sum(s: &mut &str)-> Option<Box<Exp>> { // Produkt oder Produkt + Summe
      let result = mult(s);
-     if look_token(s) == Token::INVALID {return error("Ungültiges Zeichen");}
+     if result.is_some() && look_token(s) == Token::INVALID {return error("Ungültiges Zeichen");}
      if look_token(s) != Token::  PLUS  { return result; }
      next_char(s); //skip +
      let right_value = sum(s);
@@ -88,27 +88,36 @@ fn sum(s: &mut &str)-> Option<Box<Exp>> { // Produkt oder Produkt + Summe
 
  fn mult(s: &mut &str) -> Option<Box<Exp>> { // Wert oder Wert * Produkt
     let result = value(s);
+    if result.is_none(){
+        return None;
+    }
     if look_token(s) != Token::MULT { return result; }
     next_char(s); //skip *
     let right_value = mult(s);
-     if result.is_none() || right_value.is_none() {
+     if right_value.is_none() {
          return None;
      }
      Some(Box::new(Exp::Mult { left: result.unwrap(), right: right_value.unwrap() } ))
 }
 
 fn value(s: &mut &str) -> Option<Box<Exp>> {// geklammerter Ausdruck oder Zahl
-   if look_token(s)== Token::OPEN {
-      next_char(s);// (
-      let result = expression(s);
-      if result.is_some() && look_token(s) != Token::CLOSE { return error("Schließende Klammer fehlt"); }
-      next_char(s); // )
-      return result;
-   }
-   if look_token(s) == Token::NUMBER { return number(s); }
-
-   None
- }
+    match look_token(s) {
+        Token::OPEN => {
+            next_char(s);// (
+                let result = expression(s);
+                if result.is_some() {
+                  if look_token(s) == Token::INVALID { return error("Ungültiges Zeichen"); }
+                  if look_token(s) != Token::CLOSE { return error("Schließende Klammer fehlt"); }
+                  next_char(s); // )
+                }
+                return result;
+        }
+        Token::NUMBER => return number(s),
+        Token::CLOSE => return error("Operand fehlt"),
+        Token::INVALID => return error("Ungültiges Zeichen"),
+        _ => return error("Doppelter Operator"),
+    }
+}
 
 fn expression(s: &mut &str) -> Option<Box<Exp>> {
         let token = look_token(s);
@@ -130,10 +139,10 @@ fn error(message: &str)-> Option<Box<Exp>> {
 pub fn run(input: &str) {
     let mut rest = input; 
     let root = expression(&mut rest);
-    println!("Input:  {0}", input);
+    let label = "Input: ";
+    println!("{0}{1}", label, input);
     if root.is_none() {
-        let diff = input.len() - rest.len();
-        println!("{:->1$}","^", diff + 9);
+        println!("{:->1$}","^", input.len() - rest.len()+ label.len() + 1);
         println!("Result: Fehler");
 
     }
