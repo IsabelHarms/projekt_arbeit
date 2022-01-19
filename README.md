@@ -1,5 +1,5 @@
 # **Projektarbeit - Parser für arithmetische Ausdrücke**
-# Isabel Harms
+**Isabel Harms**
 ## Aufgabenstellung:
 Als Beispiel für die Arbeitsweise eines Parsers sollen in diesem Projekt einfache arithmetische Ausdrücke analysiert und ausgewertet werden, beschränkt auf die beiden Operatoren "+" und "*"
 
