@@ -2,6 +2,7 @@
 # Isabel Harms
 ## Aufgabenstellung:
 Als Beispiel für die Arbeitsweise eines Parsers sollen in diesem Projekt einfache arithmetische Ausdrücke analysiert und ausgewertet werden, beschränkt auf die beiden Operatoren "+" und "*"
+
 https://sulzmann.github.io/SoftwareProjekt/schein.html
 
 # **AST**
@@ -63,36 +64,21 @@ Die ```Error``` Expression soll dazu dienen, einen gefunden Fehler in den AST ei
 Error {
 },
 ```
-## Option
-Da es in Rust keine Nullpointer gibt,ermöglichen *Options* eine Funktion, die in anderen Sprachen oft als *nullable* bekannt ist.
-Als Option bezeichnet man eine Referenz, welche entweder ein Objekt, oder keines beinhaltet; also einen *optionalen* Wert.
-```
-pub enum Option<T> {
-    None,
-    Some(T),
-}
-```
-Dies hat eine Vielzahl von Verwendungsmöglichkeiten, unter anderem für das *Pattern-Matching* oder *Partielle Funktionen*.
-Zwischenzeitlich wurde diese Funktionalität auch in meinem Code verwendet, wurde jedoch nach einiger Zeit durch **Boxen** ersetzt.
-Dennoch wollte ich sie hier integrieren, da sie zur Perfektionierung dieses Programms hilfreich wären um ein weiteres match zu verwenden und ein besseres Einbauen der Fehler in den Parser ermöglichen würden.
 
-## Box
-Eine *Box* beschreibt eine Referenz zu allokiertem Speicher auf dem *Heap* und wird benötigt, um mithilfe einer bekannten Größe auch rekursive Verweise zu ermöglichen.
-Da die Größe unserer **Expressions** zur Zeit des Kompilierens noch nicht bekannt ist und Rust aufgrund seines ungewöhnlichen Memory-Managements sehr streng ist, was unbekannten Speicherbedarf angeht, müssen unsere **Expressions** "geboxt" werden.
 
 # **Ergebnis darstellen**
-# show_exp
+
+# Methoden in exp.rs
+## show_exp()
+Diese Funktion sucht rekursiv die Struktur des Baumes ab, konvertiert die Werte der Endknoten zu Strings und fügt anhand der Verzweigungen und Exp-Typen die richtigen Klammern und Opratoren.
 ```
 Exp::Plus{left, right} => { let s = "(".to_string() + &show_exp(&left) + &"+".to_string() + &show_exp(&right) + &")".to_string();
 ```
-# eval_exp
+## eval_exp()
+Zum Evaluieren des *AST* wird ähnlich vorgegangen, jedoch werden die Werte direkt, von Unten nach Oben, zusammengerechnet.
 ```
 Exp::Plus{left, right} => eval_exp(&left)+eval_exp(&right),
 ```
-# Tests
-```
-```
-
 # **Tokenizer**
 
 Die verschiedenen Characters, die in den Ausdrücken vorkommen können werden durch folgendes *enum*  beschrieben:
@@ -144,16 +130,17 @@ fn outer_plus(s: &str)-> usize
 ```
 ## Finale Version
 ```
-Exp    -> Sum
+Exp    -> Sum    | +Sum
 Sum    -> Mult   | Mult + Sum
 Mult   -> Value  | Value * Mult
 Value  -> (Exp)  | Number
 Number -> [0..9] | [1..9]*10 + Number
 ```
 Entspricht ein **Token** keinem der vorgegebenen Optionen, so wird ein Fehler ausgegeben.
-Der Zustand **Exp** scheint überflüssig, hier findet jedoch der Übersicht halber eine erste Fehlerüberprüfung statt, um den Code in **Sum** zu vereinfachen.
+Der Zustand **Exp** verarbeitet ein ggf. vorhandes unäres Plus. Außerdem findet hier der Übersicht halber eine erste Fehlerüberprüfung statt, um den Code in **Sum** zu vereinfachen.
+
 ## Beispiel Anhand von Plus
-Zur Vereinfachung gehen wir von einem gültigen Asudruck aus.
+Zur Vereinfachung gehen wir von einem gültigen Ausdruck aus.
 
 Da in beiden Alternativen der Grammatik **Mult** vorkommt, muss dies immer aufgerufen werden.
 ```
@@ -172,44 +159,67 @@ Mit diesem Prinzip können beliebig viele Summanden aneinander gehängt werden, 
 
 Mult + Mult + Mult + ....
 
-In der Funktion ```mult``` wird equivalent vorgegangen, wobei eine Multiplikation immer aus einer Kette von Ausdrücken besteht, welche aus einer einfachen Zahl oder einem geklammerten Unterausdruck aufgebaut sin.
+In der Funktion ```mult``` wird equivalent vorgegangen, wobei eine Multiplikation immer aus einer Kette von Ausdrücken besteht, welche aus einer einfachen Zahl oder einem geklammerten Unterausdruck aufgebaut sind.
+## Box
+Eine *Box* beschreibt eine Referenz zu allokiertem Speicher auf dem *Heap* und wird benötigt, um mithilfe einer bekannten Größe auch rekursive Verweise zu ermöglichen.
+Da die Größe unserer **Expressions** zur Zeit des Kompilierens noch nicht bekannt ist und Rust aufgrund seines ungewöhnlichen Memory-Managements sehr streng ist, was unbekannten Speicherbedarf angeht, müssen unsere **Expressions** "geboxt" werden.
+
+## Option
+Da es in Rust keine Nullpointer gibt,ermöglichen *Options* eine Funktion, die in anderen Sprachen oft als *nullable* bekannt ist.
+Als Option bezeichnet man eine Referenz, welche entweder ein Objekt, oder keines beinhaltet; also einen *optionalen* Wert.
 ```
-enum Exp {
-    Int {
-        val: i32,
-    },
-    Plus {
-        left: Box<Exp>,  // Box = heap allocated necessary due to recursive definition
-        right: Box<Exp>,
-    },
-    Mult {
-        left: Box<Exp>,  // Box = heap allocated necessary due to recursive definition
-        right: Box<Exp>,
-    }
+pub enum Option<T> {
+    None,
+    Some(T),
 }
+```
+Dies hat eine Vielzahl von Verwendungsmöglichkeiten, unter anderem für das *Pattern-Matching* oder *Partielle Funktionen*.
 
-
-// Show for expressions.
-fn show_exp(x : &Exp) -> String {
-    match x {
-        Exp::Int{val} => { return val.to_string(); }
-        Exp::Plus{left, right} => { let s = "(".to_string() + &show_exp(&left)
-                                             + &"+".to_string() + &show_exp(&right) + &")".to_string();
-                                    return s; }
-        Exp::Mult{left, right} => { let s = "(".to_string() + &show_exp(&left)
-                                            + &"*".to_string() + &show_exp(&right) + &")".to_string();
-                                    return s; }
+Da im Falle eines syntaktischen Fehlers im arithmetischen Ausdruck kein Baum erstellt werden soll, müssen die Funktionen, welche die Grammatik aufbauen die Möglichkeit haben kein Objekt zurückzugeben, um so darzustellen, dass das vorgefundene Zeichen unlogisch ist. Stellt ein Blatt fest, dass mindestens eine Unterkomponente ein ```None``` zurückgegeben hat, so reicht es dies nach oben weiter bis zur Wurzel. Gibt es also einen Syntaxfehler, so gibt es auch keinen *AST*.
+```
+if result.is_none() || right_value.is_none() {  //left & right
+         return None;
     }
+```
+Die Spezifikation der Art des Fehlers, ergibt sich aus einer weiteren Methode:
+## error()
+Um eine Information darüber zu erhalten, warum der Parser einen Fehler erkannt hat, wird anstelle der direkten Rückabe eines *None*, die Funktion ```error()``` aufgerufen. Diese nimmt eine Nachricht entgegen, in welcher der Parser eine kurzes Statement zum Abbruch übergeben kann.
+```
+fn error(message: &str)-> Option<Box<Exp>> {
+    println!("{}", message);
+    return None;
 }
-fn eval_exp(x: &Exp) -> i32
-{
-  match x
-  {
-    Exp::Int{val} => *val,
-    Exp::Plus{left, right} => eval_exp(&left)+eval_exp(&right),
-    Exp::Mult{left, right} => eval_exp(&left)*eval_exp(&right),
-  }
-}
+```
+
+# Tests
+Die Tests laufen über das file main.rs. Dort habe ich 2 Arrays mit arithmetischen Ausdrücken und jeweiligen Lösungen hinterlegt, welche in einer einfachen Schleife durchlaufen und evaluiert werden.
+Für jeden Test wird eine Nummer und das erwartete Ergebnis ausgeben, sowie die ```run``` methode von exp.rs aufgerufen.
+
+## run()
+
+Zunächst wird, egal ob der Parser einen Baum erzeugt hat oder nicht, der Original-Text gedruckt.
+
+Nun wird die Methode ```expression```, die als Startzustand unserer Grammatik dient, mit einem *mutable* Pointer auf unseren Ausdruck aufgerufen. Der Parser erzeugt einen Baum, oder im Fehlerfall ein *None*.
+
+Im Falle eines gültigen *AST* können unsere Untermethoden aufgerufen werden.
+```
+let tree = &root.unwrap();
+println!("Parsed: {0}", show_exp(tree));
+println!("Result: {0}", eval_exp(tree));
+```
+Gibt es jedoch keinen *AST*, also gilt: ```root.is_none()```, so wird stattdessen unterhalb des Input-Strings ein Pfeil ausgegeben, der mithilfe der Differenz zwischen Rest-, und Original-Text die Stelle des Fehlers markiert.
+```
+println!("{:->1$}","^", input.len() - rest.len()+ label.len() + 1);
+println!("Result: Fehler");
+```
+Beispielsweise ergibt sich so für einen unserer Tests folgende Ausgabe:
+```
+Test No.7:
+Schließende Klammer fehlt
+Input:  12+(23*4
+----------------^
+Result: Fehler
+Expected: Fehler
 ```
 # **Quellen**
 
