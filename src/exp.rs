@@ -61,7 +61,7 @@ fn next_char(s: &mut &str) { // consume 1 char
    *s = &s[1..];
 }
 
-// Der Parser:
+//Parser:
 fn number(s: &mut &str) -> Option<Box<Exp>> { // digit ahead, consume digits
   let mut count = 0;  //number of digits
 
@@ -74,7 +74,7 @@ fn number(s: &mut &str) -> Option<Box<Exp>> { // digit ahead, consume digits
   Some(Box::new(Exp::Int { val: result }))
 }
 
-fn sum(s: &mut &str)-> Option<Box<Exp>> { // Produkt oder Produkt + Summe
+fn sum(s: &mut &str)-> Option<Box<Exp>> { // Mult or Mult + Sum
      let result = mult(s);
      if result.is_some() && look_token(s) == Token::INVALID {return error("Ungültiges Zeichen");}
      if look_token(s) != Token::  PLUS  { return result; }
@@ -86,7 +86,7 @@ fn sum(s: &mut &str)-> Option<Box<Exp>> { // Produkt oder Produkt + Summe
      Some(Box::new(Exp::Plus { left: result.unwrap(), right: right_value.unwrap() } ))
 }
 
- fn mult(s: &mut &str) -> Option<Box<Exp>> { // Wert oder Wert * Produkt
+ fn mult(s: &mut &str) -> Option<Box<Exp>> { // Value or Value * Mult
     let result = value(s);
     if result.is_none(){
         return None;
@@ -100,7 +100,7 @@ fn sum(s: &mut &str)-> Option<Box<Exp>> { // Produkt oder Produkt + Summe
      Some(Box::new(Exp::Mult { left: result.unwrap(), right: right_value.unwrap() } ))
 }
 
-fn value(s: &mut &str) -> Option<Box<Exp>> {// geklammerter Ausdruck oder Zahl
+fn value(s: &mut &str) -> Option<Box<Exp>> {// (Exp) or Number
     match look_token(s) {
         Token::OPEN => {
             next_char(s);// (
